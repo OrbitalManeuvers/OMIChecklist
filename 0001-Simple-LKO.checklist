@@ -1,0 +1,30 @@
+Simple LKO/Crew/Return
+
+[VAB:Return Capsule]
+Chutes
+Heat shield
+Power
+Comms
+Life support
+
+[VAB:Booster]
+Roll control
+Fuel Flow
+TWR
+
+[VAB:Pre-launch]
+Crew assignment
+Staging review
+TWR review
+Comms review
+
+[Launch]
+SAS <color=#00FF00>on</color>
+Throttle <color=#00FF00>full</color>
+Countdown
+Liftoff
+
+[Ascent]
+Engage ascent guidance
+Don't burn up
+Get to orbit

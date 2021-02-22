@@ -57,7 +57,7 @@ namespace OMIChecklist
         private int selectionGridInt = -1;
         private string[] selectionStrings = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "0" };
 
-        private Checklist checklist = null;
+        private static Checklist checklist = null;
         private int categoryIndex = -1;
 
         void Awake()

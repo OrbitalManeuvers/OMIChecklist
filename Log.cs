@@ -7,9 +7,12 @@ namespace OMIChecklist
 {
     public static class Log
     {
-        public static void Info(String msg)
+        public static bool Active = false;
+
+        public static void Write(String msg)
         {
-            // UnityEngine.Debug.Log("OMIC:" + msg);
+            if (Active)
+              UnityEngine.Debug.Log("OMIC:" + msg);
         }
     }
 }

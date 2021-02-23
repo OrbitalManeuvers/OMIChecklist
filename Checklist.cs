@@ -43,14 +43,6 @@ namespace OMIChecklist
 		{
 			Items.Add(new ChecklistItem(caption));
 		}
-
-		public void SetAll(bool isChecked)
-        {
-			foreach (ChecklistItem item in Items)
-            {
-				item.Checked = isChecked;
-            }
-        }
 	}
 
 	public class Checklist

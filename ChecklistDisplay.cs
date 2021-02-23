@@ -29,16 +29,8 @@ namespace OMIChecklist
     //
     public class ChecklistDisplay : MonoBehaviour
     {
-        private const string ModName = "OMIChecklist/";
-        private const string Icon_Active = ModName + "Assets/checklist_active";
-        private const string Icon_Inactive = ModName + "Assets/checklist_inactive";
-
-        public static readonly String ROOT_PATH = KSPUtil.ApplicationRootPath;
-        public static readonly String CONFIG_BASE_FOLDER = ROOT_PATH + "GameData/";
-        public static readonly String CHECKLIST_FOLDER = CONFIG_BASE_FOLDER + ModName + "checklists/";
-
         private ApplicationLauncherButton _ChecklistButton;
-        private static readonly Texture2D buttontexture = GameDatabase.Instance.GetTexture(Icon_Inactive, false);
+        private static readonly Texture2D buttontexture = GameDatabase.Instance.GetTexture(ChecklistConfig.Icon_Active, false);
 
         private Rect _windowPosition = new Rect(300, 60, 400, 650);
 
@@ -53,12 +45,9 @@ namespace OMIChecklist
         public static bool _windowVisible = false;
         private bool _initComplete = false;
 
-        private string display = "0000";
+        private string digits = "0000";
         private int selectionGridInt = -1;
         private string[] selectionStrings = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "0" };
-
-        private static Checklist checklist = null;
-        private int categoryIndex = -1;
 
         void Awake()
         {
@@ -91,21 +80,27 @@ namespace OMIChecklist
 
         private void InitStyles()
         {
-            _windowStyle = new GUIStyle(HighLogic.Skin.window);
-            _windowStyle.fixedWidth = 400f;
-            _windowStyle.fixedHeight = 500f;
+            _windowStyle = new GUIStyle(HighLogic.Skin.window)
+            {
+                fixedWidth = 400f,
+                fixedHeight = 500f
+            };
             _labelStyle = new GUIStyle(HighLogic.Skin.label);
             _scrollStyle = new GUIStyle(HighLogic.Skin.scrollView);
             _toggleStyle = new GUIStyle(HighLogic.Skin.toggle);
 
-            _categoryStyle = new GUIStyle(HighLogic.Skin.label);
-            _categoryStyle.alignment = TextAnchor.MiddleCenter;
-            _categoryStyle.fontStyle = FontStyle.Bold;
+            _categoryStyle = new GUIStyle(HighLogic.Skin.label)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontStyle = FontStyle.Bold
+            };
 
-            _displayStyle = new GUIStyle(HighLogic.Skin.label);
-            _displayStyle.alignment = TextAnchor.MiddleCenter;
-            _displayStyle.fontStyle = FontStyle.Bold;
-            _displayStyle.fontSize = 14;
+            _displayStyle = new GUIStyle(HighLogic.Skin.label)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontStyle = FontStyle.Bold,
+                fontSize = 14
+            };
 
             _initComplete = true;
         }
@@ -143,17 +138,17 @@ namespace OMIChecklist
                 KeypadPressed();
             }
 
-            GUILayout.Label(display, _displayStyle, new[] { GUILayout.Width(45), GUILayout.Height(40) });
+            GUILayout.Label(digits, _displayStyle, new[] { GUILayout.Width(45), GUILayout.Height(40) });
 
             GUILayout.BeginVertical();
             if (GUILayout.Button("Load", GUILayout.Width(80)))
             {
                 // execute load with contents of display
-                LoadChecklist(display);
+                LoadChecklist(digits);
             }
             if (GUILayout.Button("Clear", GUILayout.Width(80)))
             {
-                display = "0000"; // formalize this
+                digits = "0000"; // formalize this
             }
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
@@ -162,7 +157,10 @@ namespace OMIChecklist
 
             // checklist title
             GUILayout.BeginVertical();
-            string checklistTitle = (checklist != null) ? checklist.Title : "<none>";
+
+            // this syntax is neat
+            //string checklistTitle = ChecklistManager.Instance.CurrentCategoryName()
+            string checklistTitle = ChecklistManager.Instance.ChecklistTitle();
             GUILayout.Label("Loaded: <b>" + checklistTitle + "</b>", _labelStyle);
             GUILayout.EndVertical();
 
@@ -172,25 +170,15 @@ namespace OMIChecklist
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("<", GUILayout.Width(20)))
             {
-                // previous category
-                if (checklist != null)
-                {
-                    if (categoryIndex > 0)
-                        categoryIndex--;
-                }
+                ChecklistManager.Instance.PrevCategory();
             }
 
-            string category = (checklist != null) ? checklist.Categories[categoryIndex].Name : "<none>";
-            GUILayout.Label(category, _categoryStyle, GUILayout.Width(150));
+            string categoryName = ChecklistManager.Instance.CurrentCategoryName();
+            GUILayout.Label(categoryName, _categoryStyle, GUILayout.Width(150));
 
             if (GUILayout.Button(">", GUILayout.Width(20)))
             {
-                // next category
-                if (checklist != null)
-                {
-                    if (categoryIndex < checklist.Categories.Count - 1)
-                        categoryIndex++;
-                }
+                ChecklistManager.Instance.NextCategory();
             }
             GUILayout.EndHorizontal();
 
@@ -203,12 +191,11 @@ namespace OMIChecklist
             _scrollPos = GUILayout.BeginScrollView(_scrollPos, _scrollStyle, GUILayout.Width(300), GUILayout.Height(355));
 
             GUILayout.BeginVertical(); // the items
-            if (checklist != null)
+            List<ChecklistItem> items = ChecklistManager.Instance.CurrentChecklistItems();
+            if (items != null)
             {
-                int i;
-                for (i = 0; i < checklist.Categories[categoryIndex].Items.Count; i++)
+                foreach (ChecklistItem item in items)
                 {
-                    ChecklistItem item = checklist.Categories[categoryIndex].Items[i];
                     item.Checked = GUILayout.Toggle(item.Checked, item.Caption, _toggleStyle);
                 }
             }
@@ -221,38 +208,20 @@ namespace OMIChecklist
             GUILayout.BeginVertical(); // buttons, right side
             if (GUILayout.Button("Check All", GUILayout.Width(80)))
             {
-                if (checklist != null)
-                {
-                    checklist.Categories[categoryIndex].SetAll(true);
-                }
+                ChecklistManager.Instance.CheckAll(true);
             }
             if (GUILayout.Button("Clear All", GUILayout.Width(80)))
             {
-                if (checklist != null)
-                {
-                    checklist.Categories[categoryIndex].SetAll(false);
-                }
+                ChecklistManager.Instance.CheckAll(false);
             }
-            
+
             // breathe
             GUILayout.Label("", GUILayout.Height(25));
 
             // proceed
             if (GUILayout.Button("PRO", new[] { GUILayout.Width(80), GUILayout.Height(80) })) // whopper w/cheese
             {
-                if (checklist != null)
-                {
-                    int i;
-                    for (i = 0; i < checklist.Categories[categoryIndex].Items.Count; i++)
-                    {
-                        if (!checklist.Categories[categoryIndex].Items[i].Checked)
-                        {
-                            // just the first one then bail
-                            checklist.Categories[categoryIndex].Items[i].Checked = true;
-                            break;
-                        }
-                    }
-                }
+                ChecklistManager.Instance.Proceed();
             }
             GUILayout.EndVertical();
 
@@ -279,48 +248,14 @@ namespace OMIChecklist
             selectionGridInt = -1;
 
             // shift left and add new digit on the end
-            display = display.Substring(1, 3) + newDigit;
+            digits = digits.Substring(1, 3) + newDigit;
         }
 
         // once Load is clicked, the 4-digit code is passed here for loading the physical file if it exists
         void LoadChecklist(String fileCode)
         {
-            // move to ResetChecklist() or something
-            checklist = null; // is this a destroy? i feel like i'm throwing away memory here
-            categoryIndex = -1;
-            display = "0000";
-
-            Log.Info($"fileCode={fileCode}");
-
-            // the code just has to be the first 4 characters of the name, with a .checklist ext
-            string mask = fileCode + "*.checklist";
-            string[] fileList = Directory.GetFiles(CHECKLIST_FOLDER, mask);
-
-            // if there are any there, take the first one. keep your 4-digits unique, folks.
-            if (fileList.Length > 0)
-            {
-                Log.Info($"file is {fileList[0]}");
-
-                // this code came-ish from x-science. i have no idea which file access method is "best" under
-                // ksp, and I don't know how to wrangle ksp.io.textreader.createfor<me> stuff with the pathing and whatnot
-
-                using (StreamReader reader = File.OpenText(fileList[0]))
-                {
-                    List<string> lines = new List<string>();
-
-                    string line = "";
-                    while ((line = reader.ReadLine()) != null)
-                    {
-                        lines.Add(line);
-                    }
-
-                    checklist = new Checklist(lines); 
-                    if (checklist.Categories.Count > 0)
-                        categoryIndex = 0;
-
-                    ScreenMessages.PostScreenMessage($"Loaded {checklist.Title}", 5f, ScreenMessageStyle.UPPER_CENTER);
-                }
-            }
+            digits = "0000";
+            ChecklistManager.Instance.LoadChecklist(fileCode);
         }
 
     }

@@ -72,7 +72,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Checklist.cs" />
+    <Compile Include="ChecklistConfig.cs" />
     <Compile Include="ChecklistDisplay.cs" />
+    <Compile Include="ChecklistManager.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
